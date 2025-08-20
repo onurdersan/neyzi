@@ -1,4 +1,4 @@
-import React, a from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calculator, User, Ruler, Weight, Circle, Clipboard } from 'lucide-react';
 
 // Bileşenin ana fonksiyonu
