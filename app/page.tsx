@@ -53,12 +53,20 @@ const TurkishGrowthPercentileCalculator = () => {
   };
 
   // Z-skorundan persentil (yüzdelik) değeri hesaplama
-  const zScoreToPercentile = (z) => {
-      if (z < -3.5) return 0.0;
-      if (z > 3.5) return 100.0;
-      const phi = (x) => (1.0 + Math.erf(x / Math.sqrt(2.0))) / 2.0;
-      return (phi(z) * 100).toFixed(1);
-  };
+const zScoreToPercentile = (zScore) => {
+    if (zScore < -3.5) return "0.0";
+    if (zScore > 3.5) return "100.0";
+
+    const t = 1 / (1 + 0.2316419 * Math.abs(zScore));
+    const d = 0.3989423 * Math.exp(-zScore * zScore / 2);
+    let probability = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+
+    if (zScore > 0) {
+      probability = 1 - probability;
+    }
+
+    return (probability * 100).toFixed(1);
+};
   
   // Doğum tarihinden yıl olarak yaş hesaplama
   const calculateAgeFromBirthDate = (birthDate) => {
