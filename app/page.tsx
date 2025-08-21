@@ -18,6 +18,11 @@ const TurkishGrowthPercentileCalculator = () => {
   const [results, setResults] = useState(null);
   // Kopyalama işleminin durumunu tutan state
   const [copySuccess, setCopySuccess] = useState('');
+  const [maxDate, setMaxDate] = useState('');
+  useEffect(() => {
+  // Bu kod sadece component tarayıcıda yüklendikten sonra çalışır.
+  setMaxDate(new Date().toISOString().split("T")[0]);
+}, []);
 
   // Olcay Neyzi ve ark. (2015) çalışmasından alınan LMS parametreleri
   // L (Box-Cox dönüşüm gücü), M (medyan), S (varyasyon katsayısı)
@@ -255,7 +260,7 @@ const zScoreToPercentile = (zScore) => {
                   <input type="number" step="0.1" min="0" max="18" value={childData.age} onChange={(e) => handleInputChange('age', e.target.value)} placeholder="Yaş (yıl olarak, örn: 5.5)" className="w-full p-2 border border-gray-300 rounded-md"/>
                 ) : (
                   <>
-                    <input type="date" value={childData.birthDate} onChange={(e) => handleInputChange('birthDate', e.target.value)} max={new Date().toISOString().split('T')[0]} className="w-full p-2 border border-gray-300 rounded-md"/>
+                    <input type="date" value={childData.birthDate} onChange={(e) => handleInputChange('birthDate', e.target.value)} max={maxDate} className="w-full p-2 border border-gray-300 rounded-md"/>
                     {childData.birthDate && <p className="text-xs text-gray-600 mt-1">Hesaplanan yaş: {getActiveAge().toFixed(2)} yıl</p>}
                   </>
                 )}
