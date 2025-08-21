@@ -15,7 +15,7 @@ const TurkishGrowthPercentileCalculator = () => {
     headCircumference: ''
   });
   // Hesaplama sonuçlarını tutan state
-  const [results, setResults] = useState(null);
+  const [results, setResults] = useState<any>(null);
   // Kopyalama işleminin durumunu tutan state
   const [copySuccess, setCopySuccess] = useState('');
   const [maxDate, setMaxDate] = useState('');
@@ -26,7 +26,7 @@ const TurkishGrowthPercentileCalculator = () => {
 
   // Olcay Neyzi ve ark. (2015) çalışmasından alınan LMS parametreleri
   // L (Box-Cox dönüşüm gücü), M (medyan), S (varyasyon katsayısı)
-  const lmsData = {
+  const lmsData: any = {
     weight: { /* Ağırlık verileri... */ },
     height: { /* Boy verileri... */ },
     headCircumference: {
@@ -49,7 +49,7 @@ const TurkishGrowthPercentileCalculator = () => {
   };
 
   // Z-skoru hesaplama formülü
-  const calculateZScore = (value, L, M, S) => {
+  const calculateZScore = (value: number, L: number, M: number, S: number) => {
     if (S === 0) return 0;
     if (L !== 0) {
       return (Math.pow(value / M, L) - 1) / (L * S);
@@ -58,7 +58,7 @@ const TurkishGrowthPercentileCalculator = () => {
   };
 
   // Z-skorundan persentil (yüzdelik) değeri hesaplama
-const zScoreToPercentile = (zScore) => {
+const zScoreToPercentile = (zScore: number) => {
     if (zScore < -3.5) return "0.0";
     if (zScore > 3.5) return "100.0";
 
@@ -74,7 +74,7 @@ const zScoreToPercentile = (zScore) => {
 };
   
   // Doğum tarihinden yıl olarak yaş hesaplama
-  const calculateAgeFromBirthDate = (birthDate) => {
+  const calculateAgeFromBirthDate = (birthDate: string) => {
     const today = new Date();
     const birth = new Date(birthDate);
     const ageInMs = today.getTime() - birth.getTime();
@@ -90,7 +90,7 @@ const zScoreToPercentile = (zScore) => {
   };
   
   // Veri setindeki en yakın yaş grubunu bulma
-  const findClosestAge = (age, dataset) => {
+  const findClosestAge = (age: number, dataset: { [key: string]: any }) => {
     const ages = Object.keys(dataset).map(Number).sort((a, b) => a - b);
     if (isNaN(age) || age < 0) return ages[0];
     if (age > ages[ages.length - 1]) return ages[ages.length - 1];
@@ -100,7 +100,7 @@ const zScoreToPercentile = (zScore) => {
   };
 
   // Vücut Kitle İndeksi (VKİ) hesaplama
-  const calculateBMI = (weight, height) => {
+  const calculateBMI = (weight: number, height: number) => {
     if (!height || height === 0) return 0;
     const heightInMeters = height / 100;
     return weight / (heightInMeters * heightInMeters);
@@ -117,21 +117,21 @@ const zScoreToPercentile = (zScore) => {
       return;
     }
 
-    let newResults = { age: age.toFixed(2) };
+    let newResults: any = { age: age.toFixed(2) };
 
     // Ağırlık hesaplaması
     if (weight && lmsData.weight[gender]) {
       const closestAge = findClosestAge(age, lmsData.weight[gender]);
       const lms = lmsData.weight[gender][closestAge];
       const zScore = calculateZScore(parseFloat(weight), lms.L, lms.M, lms.S);
-      const getCategory = (p) => {
+      const getCategory = (p: number) => {
         if (p < 3) return { text: 'Düşük kilolu', color: 'text-blue-600' };
         if (p < 85) return { text: 'Normal', color: 'text-green-600' };
         if (p < 95) return { text: 'Fazla kilolu', color: 'text-yellow-600' };
         return { text: 'Obez', color: 'text-red-600' };
       };
       const percentile = zScoreToPercentile(zScore);
-      newResults.weight = { value: weight, percentile, zScore: zScore.toFixed(2), category: getCategory(percentile), refAge: closestAge };
+      newResults.weight = { value: weight, percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile)), refAge: closestAge };
     }
 
     // Boy hesaplaması
@@ -139,13 +139,13 @@ const zScoreToPercentile = (zScore) => {
       const closestAge = findClosestAge(age, lmsData.height[gender]);
       const lms = lmsData.height[gender][closestAge];
       const zScore = calculateZScore(parseFloat(height), lms.L, lms.M, lms.S);
-      const getCategory = (p) => {
+      const getCategory = (p: number) => {
         if (p < 3) return { text: 'Kısa boy', color: 'text-blue-600' };
         if (p <= 97) return { text: 'Normal', color: 'text-green-600' };
         return { text: 'Uzun boy', color: 'text-blue-600' };
       };
       const percentile = zScoreToPercentile(zScore);
-      newResults.height = { value: height, percentile, zScore: zScore.toFixed(2), category: getCategory(percentile), refAge: closestAge };
+      newResults.height = { value: height, percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile)), refAge: closestAge };
     }
     
     // Baş çevresi hesaplaması
@@ -154,13 +154,13 @@ const zScoreToPercentile = (zScore) => {
         if (lmsData.headCircumference[gender][closestAge]) {
             const lms = lmsData.headCircumference[gender][closestAge];
             const zScore = calculateZScore(parseFloat(headCircumference), lms.L, lms.M, lms.S);
-            const getCategory = (p) => {
+            const getCategory = (p: number) => {
                 if (p < 3) return { text: 'Mikrosefali', color: 'text-blue-600' };
                 if (p <= 97) return { text: 'Normal', color: 'text-green-600' };
                 return { text: 'Makrosefali', color: 'text-red-600' };
             };
             const percentile = zScoreToPercentile(zScore);
-            newResults.headCircumference = { value: headCircumference, percentile, zScore: zScore.toFixed(2), category: getCategory(percentile), refAge: closestAge };
+            newResults.headCircumference = { value: headCircumference, percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile)), refAge: closestAge };
         }
     }
 
@@ -184,7 +184,7 @@ const zScoreToPercentile = (zScore) => {
   }, [childData]);
 
   // Input değişikliklerini state'e yansıtan fonksiyon
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: string, value: string) => {
     setChildData(prev => ({ ...prev, [field]: value }));
   };
   
@@ -289,10 +289,10 @@ const zScoreToPercentile = (zScore) => {
               {results && (results.weight || results.height || results.headCircumference) ? (
                 <div className="space-y-4">
                   {/* Sonuç Kartı Şablonu */}
-                  {Object.entries(results).map(([key, data]) => {
+                  {Object.entries(results).map(([key, data]: [string, any]) => {
                     if (typeof data !== 'object' || !data.value) return null;
-                    const titles = { weight: 'Ağırlık', height: 'Boy', headCircumference: 'Baş Çevresi', bmi: 'Vücut Kitle İndeksi' };
-                    const units = { weight: 'kg', height: 'cm', headCircumference: 'cm', bmi: 'kg/m²' };
+                    const titles: { [key: string]: string } = { weight: 'Ağırlık', height: 'Boy', headCircumference: 'Baş Çevresi', bmi: 'Vücut Kitle İndeksi' };
+                    const units: { [key: string]: string } = { weight: 'kg', height: 'cm', headCircumference: 'cm', bmi: 'kg/m²' };
                     
                     return (
                       <div key={key} className="bg-gray-50 rounded-lg p-4">
