@@ -208,13 +208,14 @@ const TurkishGrowthPercentileCalculator = () => {
           if (p < 5) return { text: 'Zayıf', color: 'text-blue-600' };
           if (p < 85) return { text: 'Normal', color: 'text-green-600' };
           if (p < 95) return { text: 'Fazla kilolu', color: 'text-yellow-600' };
-          if (currentAge <= 2) {
+          if (currentAge >= 2) {
             const bmi_p95_120 = p95_value * 1.2;
             const bmi_p95_140 = p95_value * 1.4;
+           
             if (bmi >= bmi_p95_140) return { text: 'Sınıf 3 Obezite', color: 'text-red-600' };
             if (bmi >= bmi_p95_120) return { text: 'Sınıf 2 Obezite', color: 'text-red-600' };
           }
-          return { text: 'Obez', color: 'text-red-600' };
+          return { text: 'Sınıf 1 Obez', color: 'text-red-600' };
         };
         const percentile = zScoreToPercentile(zScore);
         newResults.bmi = { value: bmi.toFixed(1), percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile), ageForCalculation, zScore), refAge: closestAge };
