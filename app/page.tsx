@@ -38,8 +38,8 @@ const TurkishGrowthPercentileCalculator = () => {
       }
     },
     bmi: {
-      boys: { 0: { L: -0.5784, M: 13.4389, S: 0.13335 }, 0.25: { L: -0.6348, M: 14.7314, S: 0.12154 }, 0.5: { L: -0.7691, M: 15.6599, S: 0.11358 }, 0.75: { L: -0.9142, M: 16.3263, S: 0.10842 }, 1: { L: -1.0494, M: 16.8159, S: 0.10513 }, 2: { L: -1.4886, M: 17.0797, S: 0.09919 }, 3: { L: -1.6558, M: 16.7126, S: 0.09631 }, 4: { L: -1.7144, M: 16.4259, S: 0.09459 }, 5: { L: -1.7344, M: 16.2798, S: 0.09378 }, 6: { L: -1.745, M: 16.292, S: 0.09403 }, 7: { L: -1.7589, M: 16.452, S: 0.09545 }, 8: { L: -1.7769, M: 16.7533, S: 0.09804 }, 9: { L: -1.7958, M: 17.1958, S: 0.10178 }, 10: { L: -1.8109, M: 17.7811, S: 0.1066 }, 11: { L: -1.817, M: 18.508, S: 0.11242 }, 12: { L: -1.8087, M: 19.371, S: 0.11911 }, 13: { L: -1.782, M: 20.3582, S: 0.12648 }, 14: { L: -1.733, M: 21.451, S: 0.13437 }, 15: { L: -1.66, M: 22.624, S: 0.14261 }, 16: { L: -1.563, M: 23.85, S: 0.15104 }, 17: { L: -1.444, M: 25.101, S: 0.15951 }, 18: { L: -1.306, M: 26.35, S: 0.16788 } },
-      girls: { 0: { L: -0.6387, M: 13.4116, S: 0.13079 }, 0.25: { L: -0.6723, M: 14.5422, S: 0.12211 }, 0.5: { L: -0.7711, M: 15.421, S: 0.11463 }, 0.75: { L: -0.8906, M: 16.0383, S: 0.10955 }, 1: { L: -1.018, M: 16.49, S: 0.10619 }, 2: { L: -1.458, M: 16.71, S: 0.09919 }, 3: { L: -1.63, M: 16.4, S: 0.09528 }, 4: { L: -1.7, M: 16.1, S: 0.09276 }, 5: { L: -1.72, M: 16.0, S: 0.09176 }, 6: { L: -1.73, M: 16.1, S: 0.09232 }, 7: { L: -1.74, M: 16.4, S: 0.09458 }, 8: { L: -1.75, M: 16.9, S: 0.09848 }, 9: { L: -1.75, M: 17.5, S: 0.10389 }, 10: { L: -1.74, M: 18.2, S: 0.11059 }, 11: { L: -1.72, M: 19.0, S: 0.11829 }, 12: { L: -1.69, M: 19.9, S: 0.1266 }, 13: { L: -1.65, M: 20.8, S: 0.13511 }, 14: { L: -1.59, M: 21.7, S: 0.14343 }, 15: { L: -1.52, M: 22.6, S: 0.1513 }, 16: { L: -1.44, M: 23.5, S: 0.1585 }, 17: { L: -1.35, M: 24.4, S: 0.1648 }, 18: { L: -1.26, M: 25.2, S: 0.1702 } }
+        boys: { 2: { L: -1.4886, M: 17.0797, S: 0.09919 }, 3: { L: -1.6558, M: 16.7126, S: 0.09631 }, 4: { L: -1.7144, M: 16.4259, S: 0.09459 }, 5: { L: -1.7344, M: 16.2798, S: 0.09378 }, 6: { L: -1.745, M: 16.292, S: 0.09403 }, 7: { L: -1.7589, M: 16.452, S: 0.09545 }, 8: { L: -1.7769, M: 16.7533, S: 0.09804 }, 9: { L: -1.7958, M: 17.1958, S: 0.10178 }, 10: { L: -1.8109, M: 17.7811, S: 0.1066 }, 11: { L: -1.817, M: 18.508, S: 0.11242 }, 12: { L: -1.8087, M: 19.371, S: 0.11911 }, 13: { L: -1.782, M: 20.3582, S: 0.12648 }, 14: { L: -1.733, M: 21.451, S: 0.13437 }, 15: { L: -1.66, M: 22.624, S: 0.14261 }, 16: { L: -1.563, M: 23.85, S: 0.15104 }, 17: { L: -1.444, M: 25.101, S: 0.15951 }, 18: { L: -1.306, M: 26.35, S: 0.16788 } },
+        girls: { 2: { L: -1.458, M: 16.71, S: 0.09919 }, 3: { L: -1.63, M: 16.4, S: 0.09528 }, 4: { L: -1.7, M: 16.1, S: 0.09276 }, 5: { L: -1.72, M: 16.0, S: 0.09176 }, 6: { L: -1.73, M: 16.1, S: 0.09232 }, 7: { L: -1.74, M: 16.4, S: 0.09458 }, 8: { L: -1.75, M: 16.9, S: 0.09848 }, 9: { L: -1.75, M: 17.5, S: 0.10389 }, 10: { L: -1.74, M: 18.2, S: 0.11059 }, 11: { L: -1.72, M: 19.0, S: 0.11829 }, 12: { L: -1.69, M: 19.9, S: 0.1266 }, 13: { L: -1.65, M: 20.8, S: 0.13511 }, 14: { L: -1.59, M: 21.7, S: 0.14343 }, 15: { L: -1.52, M: 22.6, S: 0.1513 }, 16: { L: -1.44, M: 23.5, S: 0.1585 }, 17: { L: -1.35, M: 24.4, S: 0.1648 }, 18: { L: -1.26, M: 25.2, S: 0.1702 } }
     }
   };
   // Ağırlık ve boy verilerini lmsData içine ekleyelim
@@ -62,7 +62,7 @@ const TurkishGrowthPercentileCalculator = () => {
   };
 
   // Z-skorundan persentil (yüzdelik) değeri hesaplama
-const zScoreToPercentile = (zScore: number) => {
+  const zScoreToPercentile = (zScore: number) => {
     if (zScore < -3.5) return "0.0";
     if (zScore > 3.5) return "100.0";
 
@@ -75,32 +75,40 @@ const zScoreToPercentile = (zScore: number) => {
     }
 
     return (probability * 100).toFixed(1);
-};
+  };
   
-  // Doğum tarihinden yıl olarak yaş hesaplama
+  // Doğum tarihinden yıl, ay ve gün olarak yaş hesaplama
   const calculateAgeFromBirthDate = (birthDate: string) => {
     const today = new Date();
     const birth = new Date(birthDate);
+    
     let years = today.getFullYear() - birth.getFullYear();
     let months = today.getMonth() - birth.getMonth();
     let days = today.getDate() - birth.getDate();
 
     if (days < 0) {
-      months--;
-      days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+        months--;
+        const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        days += prevMonth.getDate();
     }
     if (months < 0) {
-      years--;
-      months += 12;
+        years--;
+        months += 12;
     }
-    const ageInYears = years + months / 12 + days / 365.25;
-    return { years, months, days, ageInYears };
+    
+    const ageInYears = today.getTime() - birth.getTime();
+    return { 
+        years, 
+        months, 
+        days,
+        decimalAge: ageInYears / (1000 * 60 * 60 * 24 * 365.25)
+    };
   };
 
-  // Kullanıcının girdiği yaş türüne göre aktif yaşı döndürme
+  // Kullanıcının girdiği yaş türüne göre aktif yaşı (ondalık olarak) döndürme
   const getActiveAge = () => {
     if (childData.ageInputType === 'birthDate' && childData.birthDate) {
-      return calculateAgeFromBirthDate(childData.birthDate).ageInYears;
+      return calculateAgeFromBirthDate(childData.birthDate).decimalAge;
     }
     return parseFloat(childData.age);
   };
@@ -228,7 +236,7 @@ const zScoreToPercentile = (zScore: number) => {
         const age = parseFloat(results.age);
         const years = Math.floor(age);
         const months = Math.floor((age - years) * 12);
-        const days = Math.round((((age - years) * 12) - months) * 30.44);
+        const days = Math.round((((age - years) * 12) - months) * (365.25 / 12));
         ageText = `${years} Yıl ${months} Ay ${days} Gün`;
     }
 
@@ -326,7 +334,7 @@ const zScoreToPercentile = (zScore: number) => {
             <section className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Sonuçlar</h3>
               
-              {results && (results.weight || results.height || results.headCircumference) ? (
+              {results && (results.weight || results.height || results.headCircumference || results.bmi) ? (
                 <div className="space-y-4">
                   {/* Sonuç Kartı Şablonu */}
                   {Object.entries(results).map(([key, data]: [string, any]) => {
@@ -340,13 +348,11 @@ const zScoreToPercentile = (zScore: number) => {
                           <h4 className="font-medium text-gray-800">{titles[key]}</h4>
                           <span className={`font-bold text-sm ${data.category.color}`}>{data.category.text}</span>
                         </div>
-                        
-                          <div className="grid grid-cols-3 text-center text-sm">
-                            <div><span className="text-gray-500 block text-xs">Değer</span><div className="font-semibold">{data.value} {units[key]}</div></div>
-                            <div><span className="text-gray-500 block text-xs">Persentil</span><div className="font-semibold">{data.percentile}%</div></div>
-                            <div><span className="text-gray-500 block text-xs">Z-Score</span><div className="font-semibold">{data.zScore}</div></div>
-                          </div>
-                        
+                        <div className="grid grid-cols-3 text-center text-sm">
+                          <div><span className="text-gray-500 block text-xs">Değer</span><div className="font-semibold">{data.value} {units[key]}</div></div>
+                          <div><span className="text-gray-500 block text-xs">Persentil</span><div className="font-semibold">{data.percentile}%</div></div>
+                          <div><span className="text-gray-500 block text-xs">Z-Score</span><div className="font-semibold">{data.zScore}</div></div>
+                        </div>
                       </div>
                     );
                   })}
