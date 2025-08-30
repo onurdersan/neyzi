@@ -33,7 +33,7 @@ const TurkishGrowthPercentileCalculator = () => {
     if (L !== 0) {
       return (Math.pow(value / M, L) - 1) / (L * S);
     }
-    return Math.log(value / M);
+    return Math.log(value / M) / S;
   };
   
   // Z-skorundan persentil (yüzdelik) değeri hesaplama
@@ -115,6 +115,13 @@ const TurkishGrowthPercentileCalculator = () => {
 
     if (childData.useCorrectedAge && childData.gestationalAge) {
         const gestationalAgeWeeks = parseInt(childData.gestationalAge, 10);
+        if (isNaN(gestationalAgeWeeks)) {
+             return {
+                chronological: chronologicalDecimalAge,
+                corrected: null,
+                display: chronologicalDecimalAge,
+            };
+        }
         const correctionFactor = ((40 - gestationalAgeWeeks) * 7) / 365.25;
         const correctedDecimalAge = chronologicalDecimalAge - correctionFactor;
         return {
@@ -265,6 +272,10 @@ const TurkishGrowthPercentileCalculator = () => {
 
   // Input değişikliklerini state'e yansıtan fonksiyon
   const handleInputChange = (field: string, value: string | boolean) => {
+    // Düzeltilmiş yaş kutucuğu değiştirildiğinde, olası tutarsızlığı önlemek için sonuçları sıfırla
+    if (field === 'useCorrectedAge') {
+        setResults(null);
+    }
     setChildData(prev => ({ ...prev, [field]: value }));
   };
   
@@ -319,7 +330,7 @@ const TurkishGrowthPercentileCalculator = () => {
             <Calculator className="w-8 h-8" />
             <div>
               <h1 className="text-2xl font-bold">Türk Çocukları Büyüme Persentil Hesaplayıcı</h1>
-              <p className="text-blue-100 mt-1 text-sm">Olcay Neyzi ve ark. (2015) referans değerlerine göre</p>
+              
             </div>
           </div>
         </header>
@@ -345,12 +356,12 @@ const TurkishGrowthPercentileCalculator = () => {
 
               {/* Yaş Giriş Tipi Seçimi */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Yaş Girişi</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Yaş</label>
                 <div className="flex space-x-6 mb-3">
                    {['direct', 'birthDate'].map(type => (
                     <label key={type} className="flex items-center cursor-pointer">
                       <input type="radio" name="ageInputType" value={type} checked={childData.ageInputType === type} onChange={(e) => handleInputChange('ageInputType', e.target.value)} className="w-4 h-4 text-blue-600"/>
-                      <span className="ml-2 text-sm">{type === 'direct' ? 'Direkt Yaş' : 'Doğum Tarihi'}</span>
+                      <span className="ml-2 text-sm">{type === 'direct' ? 'Yaş (yıl)' : 'Doğum Tarihi'}</span>
                     </label>
                   ))}
                 </div>
@@ -393,7 +404,7 @@ const TurkishGrowthPercentileCalculator = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2"><Circle className="w-4 h-4 inline mr-2" />Baş Çevresi (cm)</label>
                 <input type="number" step="0.1" min="25" max="70" value={childData.headCircumference} onChange={(e) => handleInputChange('headCircumference', e.target.value)} placeholder="Örn: 48.5" className="w-full p-2 border border-gray-300 rounded-md"/>
-                 <p className="text-xs text-gray-500 mt-1">Not: Baş çevresi verileri 0-6 yaş arası için mevcuttur.</p>
+                
               </div>
             </section>
 
@@ -429,8 +440,8 @@ const TurkishGrowthPercentileCalculator = () => {
                   })}
 
                   <div className="text-xs text-gray-500 pt-2">
-                    <p>* Hesaplamalar {childData.useCorrectedAge && results.correctedAge ? `${results.correctedAge} düzeltilmiş yaşına` : `${results.chronologicalAge} kronolojik yaşına`} göre yapılmıştır.</p>
-                    <p>* Bu sonuçlar ön bilgilendirme amaçlıdır, tıbbi değerlendirme için hekiminize danışınız.</p>
+                    <p>* Hesaplamalar {childData.useCorrectedAge && results.correctedAge ? `${results.correctedAge} düzeltilmiş yaşına` : (results.chronologicalAge ? `${results.chronologicalAge} kronolojik yaşına` : '')} göre yapılmıştır.</p>
+                    
                   </div>
 
                   <div className="pt-4">
