@@ -204,12 +204,11 @@ const TurkishGrowthPercentileCalculator = () => {
 
     // VKİ hesaplaması
     if (weight && height) {
+        const closestAge = findClosestAge(age, lmsData.bmi[gender]);
         const bmi = calculateBMI(parseFloat(weight), parseFloat(height));
         if (lmsData.bmi[gender][closestAge]) {
-            const closestAge = findClosestAge(age, lmsData.bmi[gender]);
             const lms = lmsData.bmi[gender][closestAge];
             const zScore = calculateZScore(bmi, lms.L, lms.M, lms.S);
-            
             const getCategory = (p: number, currentAge:number, z:number) => {
                 if (currentAge > 2) {
                     if (z <= -3) return { text: 'Hafif Malnutrisyon', color: 'text-red-600' };
