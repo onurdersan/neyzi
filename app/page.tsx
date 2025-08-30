@@ -167,9 +167,9 @@ const TurkishGrowthPercentileCalculator = () => {
       const zScore = calculateZScore(parseFloat(weight), lms.L, lms.M, lms.S);
       const getCategory = (p: number, currentAge: number, z: number) => {
           if (currentAge < 2) {
-              if (z <= -3) return { text: 'Severe Malnutrition', color: 'text-red-600' };
-              if (z >= -2.9 && z <= -2) return { text: 'Moderate Malnutrition', color: 'text-yellow-600' };
-              if (z >= -1.9 && z <= -1) return { text: 'Mild Malnutrition', color: 'text-blue-600' };
+              if (z <= -3) return { text: 'Ağır Malnutrisyon', color: 'text-red-600' };
+              if (z >= -2.9 && z <= -2) return { text: 'Orta Malnutrisyon', color: 'text-yellow-600' };
+              if (z >= -1.9 && z <= -1) return { text: 'Hafif Malnutrisyon', color: 'text-blue-600' };
           }
           if (p < 3) return { text: 'Düşük kilolu', color: 'text-blue-600' };
           if (p < 85) return { text: 'Normal', color: 'text-green-600' };
@@ -219,9 +219,9 @@ const TurkishGrowthPercentileCalculator = () => {
             
             const getCategory = (p: number, currentAge:number, z:number) => {
                 if (currentAge > 2) {
-                    if (z <= -3) return { text: 'Severe Malnutrition', color: 'text-red-600' };
-                    if (z >= -2.9 && z <= -2) return { text: 'Moderate Malnutrition', color: 'text-yellow-600' };
-                    if (z >= -1.9 && z <= -1) return { text: 'Mild Malnutrition', color: 'text-blue-600' };
+                    if (z <= -3) return { text: 'Hafif Malnutrisyon', color: 'text-red-600' };
+                    if (z >= -2.9 && z <= -2) return { text: 'Orta Malnutrisyon', color: 'text-yellow-600' };
+                    if (z >= -1.9 && z <= -1) return { text: 'Hafif Malnutrisyon', color: 'text-blue-600' };
                 }
 
                 const p95_z_score = 1.645;
