@@ -33,7 +33,7 @@ const TurkishGrowthPercentileCalculator = () => {
     if (L !== 0) {
       return (Math.pow(value / M, L) - 1) / (L * S);
     }
-    return Math.log(value / M) / S;
+    return Math.log(value / M);
   };
   
   // Z-skorundan persentil (yüzdelik) değeri hesaplama
@@ -101,15 +101,19 @@ const TurkishGrowthPercentileCalculator = () => {
 
   // Kullanıcının girdiği yaş türüne göre aktif yaşı (ondalık olarak) döndürme
   const getActiveAge = () => {
-    let chronologicalDecimalAge: number;
+    let chronologicalDecimalAge: number | null = null;
 
     if (childData.ageInputType === 'birthDate' && childData.birthDate) {
       chronologicalDecimalAge = calculateAgeFromBirthDate(childData.birthDate).decimalAge;
-    } else {
+    } else if (childData.ageInputType === 'direct' && childData.age) {
       chronologicalDecimalAge = parseFloat(childData.age);
     }
 
-    if (childData.useCorrectedAge && childData.gestationalAge && childData.ageInputType === 'birthDate') {
+    if (chronologicalDecimalAge === null || isNaN(chronologicalDecimalAge)) {
+        return { chronological: null, corrected: null, display: NaN };
+    }
+
+    if (childData.useCorrectedAge && childData.gestationalAge) {
         const gestationalAgeWeeks = parseInt(childData.gestationalAge, 10);
         const correctionFactor = ((40 - gestationalAgeWeeks) * 7) / 365.25;
         const correctedDecimalAge = chronologicalDecimalAge - correctionFactor;
@@ -156,8 +160,8 @@ const TurkishGrowthPercentileCalculator = () => {
     }
 
     let newResults: any = { 
-        chronologicalAge: ageInfo.chronological.toFixed(2),
-        correctedAge: ageInfo.corrected ? ageInfo.corrected.toFixed(2) : null,
+        chronologicalAge: ageInfo.chronological !== null ? ageInfo.chronological.toFixed(2) : null,
+        correctedAge: ageInfo.corrected !== null ? ageInfo.corrected.toFixed(2) : null,
     };
 
     // Ağırlık hesaplaması
@@ -354,27 +358,27 @@ const TurkishGrowthPercentileCalculator = () => {
                 {childData.ageInputType === 'direct' ? (
                   <input type="number" step="0.1" min="0" max="18" value={childData.age} onChange={(e) => handleInputChange('age', e.target.value)} placeholder="Yaş (yıl olarak, örn: 5.5)" className="w-full p-2 border border-gray-300 rounded-md"/>
                 ) : (
-                  <>
-                    <input type="date" value={childData.birthDate} onChange={(e) => handleInputChange('birthDate', e.target.value)} max={maxDate} className="w-full p-2 border border-gray-300 rounded-md"/>
-                     <div className="mt-2">
-                        <label className="flex items-center cursor-pointer">
-                            <input type="checkbox" checked={childData.useCorrectedAge} onChange={(e) => handleInputChange('useCorrectedAge', e.target.checked)} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"/>
-                            <span className="ml-2 text-sm font-medium text-gray-700">Düzeltilmiş Yaş Hesapla</span>
-                        </label>
-                    </div>
-                    {childData.useCorrectedAge && (
-                        <div className="mt-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Doğum Haftası</label>
-                            <select value={childData.gestationalAge} onChange={(e) => handleInputChange('gestationalAge', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md">
-                                <option value="">Seçiniz...</option>
-                                {Array.from({ length: 12 }, (_, i) => 28 + i).map(week => (
-                                    <option key={week} value={week}>{week}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                  </>
+                  <input type="date" value={childData.birthDate} onChange={(e) => handleInputChange('birthDate', e.target.value)} max={maxDate} className="w-full p-2 border border-gray-300 rounded-md"/>
                 )}
+              </div>
+
+              {/* Düzeltilmiş Yaş Bölümü */}
+              <div className="space-y-2 pt-2 border-t mt-4">
+                  <label className="flex items-center cursor-pointer">
+                      <input type="checkbox" checked={childData.useCorrectedAge} onChange={(e) => handleInputChange('useCorrectedAge', e.target.checked)} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"/>
+                      <span className="ml-2 text-sm font-medium text-gray-700">Düzeltilmiş Yaş Hesapla</span>
+                  </label>
+                  {childData.useCorrectedAge && (
+                      <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Doğum Haftası</label>
+                          <select value={childData.gestationalAge} onChange={(e) => handleInputChange('gestationalAge', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md">
+                              <option value="">Seçiniz...</option>
+                              {Array.from({ length: 12 }, (_, i) => 28 + i).map(week => (
+                                  <option key={week} value={week}>{week}</option>
+                              ))}
+                          </select>
+                      </div>
+                  )}
               </div>
 
               {/* Ölçüm Girişleri */}
@@ -400,7 +404,7 @@ const TurkishGrowthPercentileCalculator = () => {
               {results && (results.weight || results.height || results.headCircumference || results.bmi) ? (
                 <div className="space-y-4">
                     <div className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg">
-                        <p><strong>Kronolojik Yaş:</strong> {results.chronologicalAge} yıl</p>
+                        {results.chronologicalAge && <p><strong>Kronolojik Yaş:</strong> {results.chronologicalAge} yıl</p>}
                         {results.correctedAge && <p><strong>Düzeltilmiş Yaş:</strong> {results.correctedAge} yıl</p>}
                     </div>
                   {/* Sonuç Kartı Şablonu */}
