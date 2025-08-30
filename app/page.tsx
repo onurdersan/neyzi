@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Calculator, User, Ruler, Weight, Circle, Clipboard } from 'lucide-react';
 import { lmsData } from './data'; // Veriyi yeni dosyadan içe aktar
 
@@ -100,7 +100,8 @@ const TurkishGrowthPercentileCalculator = () => {
   };
 
   // Kullanıcının girdiği yaş türüne göre aktif yaşı (ondalık olarak) döndürme
-  const getActiveAge = () => {
+  // *** Hatanın çözüldüğü ana fonksiyon ***
+  const getActiveAge = useCallback(() => {
     let chronologicalDecimalAge: number | null = null;
 
     if (childData.ageInputType === 'birthDate' && childData.birthDate) {
@@ -113,30 +114,37 @@ const TurkishGrowthPercentileCalculator = () => {
         return { chronological: null, corrected: null, display: NaN };
     }
 
-    if (childData.useCorrectedAge && childData.gestationalAge) {
-        const gestationalAgeWeeks = parseInt(childData.gestationalAge, 10);
-        if (isNaN(gestationalAgeWeeks)) {
-             return {
-                chronological: chronologicalDecimalAge,
-                corrected: null,
-                display: chronologicalDecimalAge,
-            };
-        }
-        const correctionFactor = ((40 - gestationalAgeWeeks) * 7) / 365.25;
-        const correctedDecimalAge = chronologicalDecimalAge - correctionFactor;
+    // Düzeltilmiş yaş kullanılmayacaksa, doğrudan kronolojik yaşı döndür.
+    if (!childData.useCorrectedAge) {
         return {
             chronological: chronologicalDecimalAge,
-            corrected: correctedDecimalAge > 0 ? correctedDecimalAge : 0,
-            display: correctedDecimalAge > 0 ? correctedDecimalAge : 0,
+            corrected: null,
+            display: chronologicalDecimalAge,
         };
     }
 
+    // Düzeltilmiş yaş kullanılacaksa ve doğum haftası geçerliyse hesapla.
+    if (childData.gestationalAge) {
+        const gestationalAgeWeeks = parseInt(childData.gestationalAge, 10);
+        if (!isNaN(gestationalAgeWeeks)) {
+            const correctionFactor = ((40 - gestationalAgeWeeks) * 7) / 365.25;
+            const correctedDecimalAge = chronologicalDecimalAge - correctionFactor;
+            return {
+                chronological: chronologicalDecimalAge,
+                corrected: correctedDecimalAge > 0 ? correctedDecimalAge : 0,
+                display: correctedDecimalAge > 0 ? correctedDecimalAge : 0,
+            };
+        }
+    }
+
+    // Düzeltilmiş yaş seçili ama hafta girilmemişse veya geçersizse, kronolojik yaşı kullan.
     return {
         chronological: chronologicalDecimalAge,
         corrected: null,
         display: chronologicalDecimalAge,
     };
-  };
+  }, [childData.age, childData.birthDate, childData.ageInputType, childData.useCorrectedAge, childData.gestationalAge]);
+
   
   // Veri setindeki en yakın yaş grubunu bulma
   const findClosestAge = (age: number, dataset: { [key: string]: any }) => {
@@ -156,7 +164,7 @@ const TurkishGrowthPercentileCalculator = () => {
   };
 
   // Ana hesaplama fonksiyonu
-  const calculatePercentiles = () => {
+  const calculatePercentiles = useCallback(() => {
     const ageInfo = getActiveAge();
     const ageForCalculation = ageInfo.display;
     const { gender, weight, height, headCircumference } = childData;
@@ -258,25 +266,28 @@ const TurkishGrowthPercentileCalculator = () => {
     }
 
     setResults(newResults);
-  };
+  }, [childData, getActiveAge]);
 
   // childData state'i her değiştiğinde hesaplamayı tetikle
   useEffect(() => {
-    // Kullanıcı yazmayı bıraktıktan 500ms sonra hesapla (debounce)
     const handler = setTimeout(() => {
         calculatePercentiles();
     }, 500); 
     
     return () => clearTimeout(handler);
-  }, [childData]);
+  }, [childData, calculatePercentiles]);
 
   // Input değişikliklerini state'e yansıtan fonksiyon
   const handleInputChange = (field: string, value: string | boolean) => {
-    // Düzeltilmiş yaş kutucuğu değiştirildiğinde, olası tutarsızlığı önlemek için sonuçları sıfırla
-    if (field === 'useCorrectedAge') {
-        setResults(null);
-    }
-    setChildData(prev => ({ ...prev, [field]: value }));
+      setChildData(prev => {
+          const newState = { ...prev, [field]: value };
+          
+          // Düzeltilmiş yaş kapatılıyorsa, doğum haftasını temizle
+          if (field === 'useCorrectedAge' && !value) {
+              newState.gestationalAge = '';
+          }
+          return newState;
+      });
   };
   
   // Sonuçları panoya kopyalama fonksiyonu
@@ -287,7 +298,7 @@ const TurkishGrowthPercentileCalculator = () => {
     if (childData.ageInputType === 'birthDate' && childData.birthDate) {
         const { years, months, days } = calculateAgeFromBirthDate(childData.birthDate);
         ageText = `Kronolojik Yaş: ${years} Yaş ${months} Ay ${days} Gün`;
-        if (results.correctedAge) {
+        if (results.correctedAge && childData.useCorrectedAge) {
             const correctedAge = parseFloat(results.correctedAge);
             const cYears = Math.floor(correctedAge);
             const cMonths = Math.floor((correctedAge - cYears) * 12);
@@ -416,7 +427,7 @@ const TurkishGrowthPercentileCalculator = () => {
                 <div className="space-y-4">
                     <div className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg">
                         {results.chronologicalAge && <p><strong>Kronolojik Yaş:</strong> {results.chronologicalAge} yıl</p>}
-                        {results.correctedAge && <p><strong>Düzeltilmiş Yaş:</strong> {results.correctedAge} yıl</p>}
+                        {results.correctedAge && childData.useCorrectedAge && <p><strong>Düzeltilmiş Yaş:</strong> {results.correctedAge} yıl</p>}
                     </div>
                   {/* Sonuç Kartı Şablonu */}
                   {Object.entries(results).map(([key, data]: [string, any]) => {
