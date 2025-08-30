@@ -60,7 +60,7 @@ const TurkishGrowthPercentileCalculator = () => {
     }
     return Math.log(value / M) / S;
   };
-
+  
   // Z-skorundan persentil (yüzdelik) değeri hesaplama
   const zScoreToPercentile = (zScore: number) => {
     if (zScore < -3.5) return "0.0";
@@ -76,7 +76,24 @@ const TurkishGrowthPercentileCalculator = () => {
 
     return (probability * 100).toFixed(1);
   };
-  
+    // Persentil değerinden Z-skoru hesaplama (yaklaşık)
+    const percentileToZScore = (percentile: number) => {
+        // Basit bir arama tablosu ve interpolasyon kullanılabilir veya daha karmaşık bir formül.
+        // Şimdilik, obezite sınıflandırması için gerekli olan 95. persentil için yaklaşık değeri kullanalım:
+        if (percentile === 95) return 1.645;
+        // Diğer değerler için daha hassas bir metoda ihtiyaç duyulacaktır.
+        return 0; // Varsayılan
+    };
+
+    // Z-skor ve LMS değerlerinden ölçüm değerini hesaplama
+    const zScoreToValue = (zScore: number, L: number, M: number, S: number) => {
+        if (L !== 0) {
+            return M * Math.pow(1 + L * S * zScore, 1 / L);
+        }
+        return M * Math.exp(S * zScore);
+    };
+
+
   // Doğum tarihinden yıl, ay ve gün olarak yaş hesaplama
   const calculateAgeFromBirthDate = (birthDate: string) => {
     const today = new Date();
@@ -148,14 +165,18 @@ const TurkishGrowthPercentileCalculator = () => {
       const closestAge = findClosestAge(age, lmsData.weight[gender]);
       const lms = lmsData.weight[gender][closestAge];
       const zScore = calculateZScore(parseFloat(weight), lms.L, lms.M, lms.S);
-      const getCategory = (p: number) => {
-        if (p < 3) return { text: 'Düşük kilolu', color: 'text-blue-600' };
-        if (p < 85) return { text: 'Normal', color: 'text-green-600' };
-        if (p < 95) return { text: 'Fazla kilolu', color: 'text-yellow-600' };
-        return { text: 'Obez', color: 'text-red-600' };
+      const getCategory = (p: number, currentAge: number, z: number) => {
+          if (currentAge < 2) {
+              if (z <= -3) return { text: 'Severe Malnutrition', color: 'text-red-600' };
+              if (z >= -2.9 && z <= -2) return { text: 'Moderate Malnutrition', color: 'text-yellow-600' };
+              if (z >= -1.9 && z <= -1) return { text: 'Mild Malnutrition', color: 'text-blue-600' };
+          }
+          if (p < 3) return { text: 'Düşük kilolu', color: 'text-blue-600' };
+          if (p < 85) return { text: 'Normal', color: 'text-green-600' };
+          return { text: 'Fazla kilolu', color: 'text-yellow-600' };
       };
       const percentile = zScoreToPercentile(zScore);
-      newResults.weight = { value: weight, percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile)), refAge: closestAge };
+      newResults.weight = { value: weight, percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile), age, zScore), refAge: closestAge };
     }
 
     // Boy hesaplaması
@@ -191,18 +212,35 @@ const TurkishGrowthPercentileCalculator = () => {
     // VKİ hesaplaması
     if (weight && height) {
         const bmi = calculateBMI(parseFloat(weight), parseFloat(height));
-        if (lmsData.bmi[gender]) {
+        if (lmsData.bmi[gender] && age >= 2) {
             const closestAge = findClosestAge(age, lmsData.bmi[gender]);
             const lms = lmsData.bmi[gender][closestAge];
             const zScore = calculateZScore(bmi, lms.L, lms.M, lms.S);
-            const getCategory = (p: number) => {
+            
+            const getCategory = (p: number, currentAge:number, z:number) => {
+                if (currentAge > 2) {
+                    if (z <= -3) return { text: 'Severe Malnutrition', color: 'text-red-600' };
+                    if (z >= -2.9 && z <= -2) return { text: 'Moderate Malnutrition', color: 'text-yellow-600' };
+                    if (z >= -1.9 && z <= -1) return { text: 'Mild Malnutrition', color: 'text-blue-600' };
+                }
+
+                const p95_z_score = 1.645;
+                const p95_value = zScoreToValue(p95_z_score, lms.L, lms.M, lms.S);
+
                 if (p < 5) return { text: 'Zayıf', color: 'text-blue-600' };
                 if (p < 85) return { text: 'Normal', color: 'text-green-600' };
                 if (p < 95) return { text: 'Fazla kilolu', color: 'text-yellow-600' };
-                return { text: 'Obez', color: 'text-red-600' };
+                
+                if (bmi < p95_value * 1.2) {
+                    return { text: 'Sınıf 1 Obezite', color: 'text-red-600' };
+                } else if (bmi < p95_value * 1.4) {
+                    return { text: 'Sınıf 2 Obezite', color: 'text-red-600' };
+                } else {
+                    return { text: 'Sınıf 3 Obezite', color: 'text-red-600' };
+                }
             };
             const percentile = zScoreToPercentile(zScore);
-            newResults.bmi = { value: bmi.toFixed(1), percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile)), refAge: closestAge };
+            newResults.bmi = { value: bmi.toFixed(1), percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile), age, zScore), refAge: closestAge };
         }
     }
 
@@ -231,13 +269,13 @@ const TurkishGrowthPercentileCalculator = () => {
     let ageText;
     if (childData.ageInputType === 'birthDate' && childData.birthDate) {
         const { years, months, days } = calculateAgeFromBirthDate(childData.birthDate);
-        ageText = `${years} Yıl ${months} Ay ${days} Gün`;
+        ageText = `${years} Yaş ${months} Ay ${days} Gün`;
     } else {
         const age = parseFloat(results.age);
         const years = Math.floor(age);
         const months = Math.floor((age - years) * 12);
         const days = Math.round((((age - years) * 12) - months) * (365.25 / 12));
-        ageText = `${years} Yıl ${months} Ay ${days} Gün`;
+        ageText = `${years} Yaş ${months} Ay ${days} Gün`;
     }
 
     const genderText = childData.gender === 'boys' ? 'Erkek' : 'Kız';
