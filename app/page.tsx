@@ -1,12 +1,18 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Calculator, User, Ruler, Weight, Circle, Clipboard } from 'lucide-react';
+import { Calculator, User, Ruler, Weight, Circle, Clipboard, Calendar } from 'lucide-react';
 import { lmsData } from './data';
+
+// Bugünün tarihini YYYY-MM-DD formatında almak için yardımcı fonksiyon
+const getTodayString = () => {
+    return new Date().toISOString().split("T")[0];
+};
 
 const TurkishGrowthPercentileCalculator = () => {
   const [childData, setChildData] = useState({
     age: '',
     birthDate: '',
+    measurementDate: getTodayString(), // Ölçüm tarihi state'i eklendi
     ageInputType: 'direct',
     gender: '',
     weight: '',
@@ -17,44 +23,13 @@ const TurkishGrowthPercentileCalculator = () => {
   });
   const [results, setResults] = useState<any>(null);
   const [copySuccess, setCopySuccess] = useState('');
-  const [maxDate, setMaxDate] = useState('');
-
-  useEffect(() => {
-    setMaxDate(new Date().toISOString().split("T")[0]);
-  }, []);
-
-  const calculateZScore = (value: number, L: number, M: number, S: number) => {
-    if (S === 0) return 0;
-    if (L !== 0) {
-      return (Math.pow(value / M, L) - 1) / (L * S);
-    }
-    return Math.log(value / M) / S;
-  };
-
-  const zScoreToPercentile = (zScore: number) => {
-    if (zScore < -3.5) return "0.0";
-    if (zScore > 3.5) return "100.0";
-    const t = 1 / (1 + 0.2316419 * Math.abs(zScore));
-    const d = 0.3989423 * Math.exp(-zScore * zScore / 2);
-    let probability = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
-    if (zScore > 0) {
-      probability = 1 - probability;
-    }
-    return (probability * 100).toFixed(1);
-  };
-
-  const zScoreToValue = (zScore: number, L: number, M: number, S: number) => {
-    if (L !== 0) {
-      return M * Math.pow(1 + L * S * zScore, 1 / L);
-    }
-    return M * Math.exp(S * zScore);
-  };
-
-  const calculateAgeFromBirthDate = (birthDate: string) => {
-    if (!birthDate) return { years: 0, months: 0, days: 0, decimalAge: NaN };
-    const today = new Date();
+  
+  // calculateAgeFromBirthDate fonksiyonu artık measurementDate'i parametre alıyor
+  const calculateAgeFromBirthDate = (birthDate: string, measurementDate: string) => {
+    if (!birthDate || !measurementDate) return { years: 0, months: 0, days: 0, decimalAge: NaN };
+    const today = new Date(measurementDate); // "Bugün" yerine "Ölçüm Tarihi" kullanılıyor
     const birth = new Date(birthDate);
-    if (isNaN(birth.getTime())) return { years: 0, months: 0, days: 0, decimalAge: NaN };
+    if (isNaN(birth.getTime()) || isNaN(today.getTime())) return { years: 0, months: 0, days: 0, decimalAge: NaN };
 
     let years = today.getFullYear() - birth.getFullYear();
     let months = today.getMonth() - birth.getMonth();
@@ -70,6 +45,8 @@ const TurkishGrowthPercentileCalculator = () => {
       months += 12;
     }
     const ageInMilliseconds = today.getTime() - birth.getTime();
+    if (ageInMilliseconds < 0) return { years: 0, months: 0, days: 0, decimalAge: NaN }; // Gelecekteki doğum tarihi kontrolü
+
     const decimalAge = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
     return { years, months, days, decimalAge };
   };
@@ -77,7 +54,8 @@ const TurkishGrowthPercentileCalculator = () => {
   const getActiveAge = () => {
     let chronologicalDecimalAge: number | null = null;
     if (childData.ageInputType === 'birthDate' && childData.birthDate) {
-      chronologicalDecimalAge = calculateAgeFromBirthDate(childData.birthDate).decimalAge;
+      // Hesaplamaya measurementDate dahil edildi
+      chronologicalDecimalAge = calculateAgeFromBirthDate(childData.birthDate, childData.measurementDate).decimalAge;
     } else if (childData.ageInputType === 'direct' && childData.age) {
       chronologicalDecimalAge = parseFloat(childData.age);
     }
@@ -106,7 +84,34 @@ const TurkishGrowthPercentileCalculator = () => {
     };
   };
 
-  const findClosestAge = (age: number, dataset: { [key: string]: any }) => {
+  // Diğer fonksiyonlar (calculateZScore, zScoreToPercentile vb.) değişmeden kalır...
+    const calculateZScore = (value: number, L: number, M: number, S: number) => {
+    if (S === 0) return 0;
+    if (L !== 0) {
+      return (Math.pow(value / M, L) - 1) / (L * S);
+    }
+    return Math.log(value / M) / S;
+  };
+
+  const zScoreToPercentile = (zScore: number) => {
+    if (zScore < -3.5) return "0.0";
+    if (zScore > 3.5) return "100.0";
+    const t = 1 / (1 + 0.2316419 * Math.abs(zScore));
+    const d = 0.3989423 * Math.exp(-zScore * zScore / 2);
+    let probability = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+    if (zScore > 0) {
+      probability = 1 - probability;
+    }
+    return (probability * 100).toFixed(1);
+  };
+
+  const zScoreToValue = (zScore: number, L: number, M: number, S: number) => {
+    if (L !== 0) {
+      return M * Math.pow(1 + L * S * zScore, 1 / L);
+    }
+    return M * Math.exp(S * zScore);
+  };
+    const findClosestAge = (age: number, dataset: { [key: string]: any }) => {
     const ages = Object.keys(dataset).map(Number).sort((a, b) => a - b);
     if (isNaN(age) || age < 0) return ages[0].toString();
     if (age > ages[ages.length - 1]) return ages[ages.length - 1].toString();
@@ -208,14 +213,13 @@ const TurkishGrowthPercentileCalculator = () => {
           if (p < 5) return { text: 'Zayıf', color: 'text-blue-600' };
           if (p < 85) return { text: 'Normal', color: 'text-green-600' };
           if (p < 95) return { text: 'Fazla kilolu', color: 'text-yellow-600' };
-          if (currentAge >= 2) {
+          if (currentAge <= 2) {
             const bmi_p95_120 = p95_value * 1.2;
             const bmi_p95_140 = p95_value * 1.4;
-           
             if (bmi >= bmi_p95_140) return { text: 'Sınıf 3 Obezite', color: 'text-red-600' };
             if (bmi >= bmi_p95_120) return { text: 'Sınıf 2 Obezite', color: 'text-red-600' };
           }
-          return { text: 'Sınıf 1 Obez', color: 'text-red-600' };
+          return { text: 'Obez', color: 'text-red-600' };
         };
         const percentile = zScoreToPercentile(zScore);
         newResults.bmi = { value: bmi.toFixed(1), percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile), ageForCalculation, zScore), refAge: closestAge };
@@ -223,7 +227,7 @@ const TurkishGrowthPercentileCalculator = () => {
     }
     setResults(newResults);
   };
-
+    
   useEffect(() => {
     calculatePercentiles();
   }, [childData]);
@@ -232,8 +236,13 @@ const TurkishGrowthPercentileCalculator = () => {
     setChildData(prev => {
       const newState = { ...prev, [field]: value };
       if (field === 'ageInputType') {
-        if (value === 'direct') newState.birthDate = '';
-        else newState.age = '';
+        if (value === 'direct') {
+          newState.birthDate = '';
+          // Ölçüm tarihini varsayılana döndür
+          newState.measurementDate = getTodayString(); 
+        } else {
+          newState.age = '';
+        }
       }
       if (field === 'useCorrectedAge' && !value) {
         newState.gestationalAge = '';
@@ -246,8 +255,8 @@ const TurkishGrowthPercentileCalculator = () => {
     if (!results) return;
     let ageText;
     if (childData.ageInputType === 'birthDate' && childData.birthDate) {
-        const { years, months, days } = calculateAgeFromBirthDate(childData.birthDate);
-        ageText = `Kronolojik Yaş: ${years} Yaş ${months} Ay ${days} Gün`;
+        const { years, months, days } = calculateAgeFromBirthDate(childData.birthDate, childData.measurementDate);
+        ageText = `Kronolojik Yaş: ${years} Yaş ${months} Ay ${days} Gün (Ölçüm Tarihi: ${childData.measurementDate})`;
         if (results.correctedAge && childData.useCorrectedAge) {
             const correctedAge = parseFloat(results.correctedAge);
             const cYears = Math.floor(correctedAge);
@@ -287,12 +296,12 @@ const TurkishGrowthPercentileCalculator = () => {
     <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-gray-50 min-h-screen font-sans">
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <header className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
-          <div className="flex items-center gap-4">
-            <Calculator className="w-8 h-8" />
-            <div>
-              <h1 className="text-2xl font-bold">Türk Çocukları Büyüme Persentil Hesaplayıcı</h1>
+            <div className="flex items-center gap-4">
+                <Calculator className="w-8 h-8" />
+                <div>
+                <h1 className="text-2xl font-bold">Türk Çocukları Büyüme Persentil Hesaplayıcı</h1>
+                </div>
             </div>
-          </div>
         </header>
 
         <main className="p-6">
@@ -324,7 +333,17 @@ const TurkishGrowthPercentileCalculator = () => {
                 {childData.ageInputType === 'direct' ? (
                   <input type="number" step="0.1" min="0" max="18" value={childData.age} onChange={(e) => handleInputChange('age', e.target.value)} placeholder="Yaş (yıl olarak, örn: 5.5)" className="w-full p-2 border border-gray-300 rounded-md"/>
                 ) : (
-                  <input type="date" value={childData.birthDate} onChange={(e) => handleInputChange('birthDate', e.target.value)} max={maxDate} className="w-full p-2 border border-gray-300 rounded-md"/>
+                  // Doğum tarihi ve Ölçüm tarihi inputları
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Doğum Tarihi</label>
+                        <input type="date" value={childData.birthDate} onChange={(e) => handleInputChange('birthDate', e.target.value)} max={childData.measurementDate} className="w-full p-2 border border-gray-300 rounded-md"/>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Ölçüm Tarihi</label>
+                        <input type="date" value={childData.measurementDate} onChange={(e) => handleInputChange('measurementDate', e.target.value)} min={childData.birthDate} max={getTodayString()} className="w-full p-2 border border-gray-300 rounded-md"/>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -359,7 +378,7 @@ const TurkishGrowthPercentileCalculator = () => {
                 <input type="number" step="0.1" min="25" max="70" value={childData.headCircumference} onChange={(e) => handleInputChange('headCircumference', e.target.value)} placeholder="Örn: 48.5" className="w-full p-2 border border-gray-300 rounded-md"/>
               </div>
             </section>
-
+            
             <section className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Sonuçlar</h3>
               {results && (results.weight || results.height || results.headCircumference || results.bmi) ? (
