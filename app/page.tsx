@@ -13,7 +13,9 @@ const TurkishGrowthPercentileCalculator = () => {
     gender: '',
     weight: '',
     height: '',
-    headCircumference: ''
+    headCircumference: '',
+    useCorrectedAge: false,
+    gestationalAge: ''
   });
   // Hesaplama sonuçlarını tutan state
   const [results, setResults] = useState<any>(null);
@@ -86,21 +88,43 @@ const TurkishGrowthPercentileCalculator = () => {
         months += 12;
     }
     
-    const ageInYears = today.getTime() - birth.getTime();
+    const ageInMilliseconds = today.getTime() - birth.getTime();
+    const decimalAge = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
+
     return { 
         years, 
         months, 
         days,
-        decimalAge: ageInYears / (1000 * 60 * 60 * 24 * 365.25)
+        decimalAge
     };
   };
 
   // Kullanıcının girdiği yaş türüne göre aktif yaşı (ondalık olarak) döndürme
   const getActiveAge = () => {
+    let chronologicalDecimalAge: number;
+
     if (childData.ageInputType === 'birthDate' && childData.birthDate) {
-      return calculateAgeFromBirthDate(childData.birthDate).decimalAge;
+      chronologicalDecimalAge = calculateAgeFromBirthDate(childData.birthDate).decimalAge;
+    } else {
+      chronologicalDecimalAge = parseFloat(childData.age);
     }
-    return parseFloat(childData.age);
+
+    if (childData.useCorrectedAge && childData.gestationalAge && childData.ageInputType === 'birthDate') {
+        const gestationalAgeWeeks = parseInt(childData.gestationalAge, 10);
+        const correctionFactor = ((40 - gestationalAgeWeeks) * 7) / 365.25;
+        const correctedDecimalAge = chronologicalDecimalAge - correctionFactor;
+        return {
+            chronological: chronologicalDecimalAge,
+            corrected: correctedDecimalAge > 0 ? correctedDecimalAge : 0,
+            display: correctedDecimalAge > 0 ? correctedDecimalAge : 0,
+        };
+    }
+
+    return {
+        chronological: chronologicalDecimalAge,
+        corrected: null,
+        display: chronologicalDecimalAge,
+    };
   };
   
   // Veri setindeki en yakın yaş grubunu bulma
@@ -122,20 +146,23 @@ const TurkishGrowthPercentileCalculator = () => {
 
   // Ana hesaplama fonksiyonu
   const calculatePercentiles = () => {
-    const age = getActiveAge();
+    const ageInfo = getActiveAge();
+    const ageForCalculation = ageInfo.display;
     const { gender, weight, height, headCircumference } = childData;
-
-    // Gerekli veriler girilmemişse hesaplama yapma
-    if (isNaN(age) || !gender || (!weight && !height && !headCircumference)) {
-      setResults(null);
-      return;
+    
+    if (isNaN(ageForCalculation) || !gender || (!weight && !height && !headCircumference)) {
+        setResults(null);
+        return;
     }
 
-    let newResults: any = { age: age.toFixed(2) };
+    let newResults: any = { 
+        chronologicalAge: ageInfo.chronological.toFixed(2),
+        correctedAge: ageInfo.corrected ? ageInfo.corrected.toFixed(2) : null,
+    };
 
     // Ağırlık hesaplaması
     if (weight && lmsData.weight[gender]) {
-      const closestAge = findClosestAge(age, lmsData.weight[gender]);
+      const closestAge = findClosestAge(ageForCalculation, lmsData.weight[gender]);
       const lms = lmsData.weight[gender][closestAge];
       const zScore = calculateZScore(parseFloat(weight), lms.L, lms.M, lms.S);
       const getCategory = (p: number, currentAge: number, z: number) => {
@@ -149,12 +176,12 @@ const TurkishGrowthPercentileCalculator = () => {
           return { text: 'Fazla kilolu', color: 'text-yellow-600' };
       };
       const percentile = zScoreToPercentile(zScore);
-      newResults.weight = { value: weight, percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile), age, zScore), refAge: closestAge };
+      newResults.weight = { value: weight, percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile), ageForCalculation, zScore), refAge: closestAge };
     }
 
     // Boy hesaplaması
     if (height && lmsData.height[gender]) {
-      const closestAge = findClosestAge(age, lmsData.height[gender]);
+      const closestAge = findClosestAge(ageForCalculation, lmsData.height[gender]);
       const lms = lmsData.height[gender][closestAge];
       const zScore = calculateZScore(parseFloat(height), lms.L, lms.M, lms.S);
       const getCategory = (p: number) => {
@@ -168,7 +195,7 @@ const TurkishGrowthPercentileCalculator = () => {
     
     // Baş çevresi hesaplaması
     if (headCircumference && lmsData.headCircumference[gender]) {
-        const closestAge = findClosestAge(age, lmsData.headCircumference[gender]);
+        const closestAge = findClosestAge(ageForCalculation, lmsData.headCircumference[gender]);
         if (lmsData.headCircumference[gender][closestAge]) {
             const lms = lmsData.headCircumference[gender][closestAge];
             const zScore = calculateZScore(parseFloat(headCircumference), lms.L, lms.M, lms.S);
@@ -184,7 +211,7 @@ const TurkishGrowthPercentileCalculator = () => {
 
     // VKİ hesaplaması
     if (weight && height) {
-        const closestAge = findClosestAge(age, lmsData.bmi[gender]);
+        const closestAge = findClosestAge(ageForCalculation, lmsData.bmi[gender]);
         const bmi = calculateBMI(parseFloat(weight), parseFloat(height));
         if (lmsData.bmi[gender][closestAge]) {
             const lms = lmsData.bmi[gender][closestAge];
@@ -211,9 +238,11 @@ const TurkishGrowthPercentileCalculator = () => {
                       return { text: 'Sınıf 3 Obezite', color: 'text-red-600' };
                   }
               }
+              // For older children, > 95 percentile is simply 'Obez'
+              return { text: 'Obez', color: 'text-red-600' };
             };
             const percentile = zScoreToPercentile(zScore);
-            newResults.bmi = { value: bmi.toFixed(1), percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile), age, zScore), refAge: closestAge };
+            newResults.bmi = { value: bmi.toFixed(1), percentile, zScore: zScore.toFixed(2), category: getCategory(parseFloat(percentile), ageForCalculation, zScore), refAge: closestAge };
         }
     }
 
@@ -231,7 +260,7 @@ const TurkishGrowthPercentileCalculator = () => {
   }, [childData]);
 
   // Input değişikliklerini state'e yansıtan fonksiyon
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setChildData(prev => ({ ...prev, [field]: value }));
   };
   
@@ -242,17 +271,24 @@ const TurkishGrowthPercentileCalculator = () => {
     let ageText;
     if (childData.ageInputType === 'birthDate' && childData.birthDate) {
         const { years, months, days } = calculateAgeFromBirthDate(childData.birthDate);
-        ageText = `${years} Yaş ${months} Ay ${days} Gün`;
+        ageText = `Kronolojik Yaş: ${years} Yaş ${months} Ay ${days} Gün`;
+        if (results.correctedAge) {
+            const correctedAge = parseFloat(results.correctedAge);
+            const cYears = Math.floor(correctedAge);
+            const cMonths = Math.floor((correctedAge - cYears) * 12);
+            const cDays = Math.round((((correctedAge - cYears) * 12) - cMonths) * (365.25 / 12));
+            ageText += ` | Düzeltilmiş Yaş: ${cYears} Yaş ${cMonths} Ay ${cDays} Gün`;
+        }
     } else {
-        const age = parseFloat(results.age);
+        const age = parseFloat(results.chronologicalAge);
         const years = Math.floor(age);
         const months = Math.floor((age - years) * 12);
         const days = Math.round((((age - years) * 12) - months) * (365.25 / 12));
-        ageText = `${years} Yaş ${months} Ay ${days} Gün`;
+        ageText = `Yaş: ${years} Yaş ${months} Ay ${days} Gün`;
     }
 
     const genderText = childData.gender === 'boys' ? 'Erkek' : 'Kız';
-    const headerText = `${ageText}, ${genderText}\n---\n`;
+    const headerText = `${ageText}\nCinsiyet: ${genderText}\n---\n`;
 
     let weightText = results.weight ? `Ağırlık: ${results.weight.value} kg | Persentil: ${results.weight.percentile}% | Z-Skoru: ${results.weight.zScore} (${results.weight.category.text}) | Ref. Yaş: ${results.weight.refAge}\n` : '';
     let heightText = results.height ? `Boy: ${results.height.value} cm | Persentil: ${results.height.percentile}% | Z-Skoru: ${results.height.zScore} (${results.height.category.text}) | Ref. Yaş: ${results.height.refAge}\n` : '';
@@ -320,7 +356,23 @@ const TurkishGrowthPercentileCalculator = () => {
                 ) : (
                   <>
                     <input type="date" value={childData.birthDate} onChange={(e) => handleInputChange('birthDate', e.target.value)} max={maxDate} className="w-full p-2 border border-gray-300 rounded-md"/>
-                    {childData.birthDate && <p className="text-xs text-gray-600 mt-1">Hesaplanan yaş: {getActiveAge().toFixed(2)} yıl</p>}
+                     <div className="mt-2">
+                        <label className="flex items-center cursor-pointer">
+                            <input type="checkbox" checked={childData.useCorrectedAge} onChange={(e) => handleInputChange('useCorrectedAge', e.target.checked)} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"/>
+                            <span className="ml-2 text-sm font-medium text-gray-700">Düzeltilmiş Yaş Hesapla</span>
+                        </label>
+                    </div>
+                    {childData.useCorrectedAge && (
+                        <div className="mt-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Doğum Haftası</label>
+                            <select value={childData.gestationalAge} onChange={(e) => handleInputChange('gestationalAge', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md">
+                                <option value="">Seçiniz...</option>
+                                {Array.from({ length: 12 }, (_, i) => 28 + i).map(week => (
+                                    <option key={week} value={week}>{week}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                   </>
                 )}
               </div>
@@ -347,6 +399,10 @@ const TurkishGrowthPercentileCalculator = () => {
               
               {results && (results.weight || results.height || results.headCircumference || results.bmi) ? (
                 <div className="space-y-4">
+                    <div className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg">
+                        <p><strong>Kronolojik Yaş:</strong> {results.chronologicalAge} yıl</p>
+                        {results.correctedAge && <p><strong>Düzeltilmiş Yaş:</strong> {results.correctedAge} yıl</p>}
+                    </div>
                   {/* Sonuç Kartı Şablonu */}
                   {Object.entries(results).map(([key, data]: [string, any]) => {
                     if (typeof data !== 'object' || !data.value) return null;
@@ -369,7 +425,7 @@ const TurkishGrowthPercentileCalculator = () => {
                   })}
 
                   <div className="text-xs text-gray-500 pt-2">
-                    <p>* Hesaplamalar {results.age} yaşındaki bir çocuk için yapılmıştır.</p>
+                    <p>* Hesaplamalar {childData.useCorrectedAge && results.correctedAge ? `${results.correctedAge} düzeltilmiş yaşına` : `${results.chronologicalAge} kronolojik yaşına`} göre yapılmıştır.</p>
                     <p>* Bu sonuçlar ön bilgilendirme amaçlıdır, tıbbi değerlendirme için hekiminize danışınız.</p>
                   </div>
 
