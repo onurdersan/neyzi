@@ -2,6 +2,7 @@
   "buildCommand": "npm run build",
   "installCommand": "npm ci",
   "framework": "nextjs",
+  "outputDirectory": ".next",
   "regions": ["iad1", "fra1"],
   "functions": {
     "app/**/*.tsx": {
