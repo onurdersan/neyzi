@@ -32,8 +32,10 @@ jobs:
             echo "manager=npm" >> $GITHUB_OUTPUT
             if [ -f "${{ github.workspace }}/package-lock.json" ]; then
               echo "command=ci" >> $GITHUB_OUTPUT
+              echo "cache=npm" >> $GITHUB_OUTPUT
             else
               echo "command=install" >> $GITHUB_OUTPUT
+              echo "cache=" >> $GITHUB_OUTPUT
             fi
             echo "runner=npx --no-install" >> $GITHUB_OUTPUT
             exit 0
@@ -45,7 +47,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: ${{ steps.detect-package-manager.outputs.manager }}
+          cache: ${{ steps.detect-package-manager.outputs.cache }}
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
